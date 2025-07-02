@@ -60,8 +60,8 @@ The library provides flexible configuration options:
 ```go
 config := cs2gsi.Config{
     ServerAddr:            ":3000",           // HTTP server address ex: 127.0.0.1:3000, localhost:4242
-    REGULATION_MAX_ROUNDS: 13,               // Max rounds in regulation
-    OVERTIME_MAX_ROUNDS:   3,                // Max rounds in overtime
+    RegulationMaxRounds: 13,               // Max rounds in regulation
+    OvertimeMaxRounds:   3,                // Max rounds in overtime
     LogLevel:              slog.LevelInfo,   // Logging level
 }
 
@@ -178,8 +178,8 @@ if err := gsi.Listen(); err != nil {
 ```go
 config := cs2gsi.Config{
     ServerAddr:            ":8080",
-    REGULATION_MAX_ROUNDS: 30,  // Custom round limit
-    OVERTIME_MAX_ROUNDS:   6,   // Custom overtime limit
+    RegulationMaxRounds: 30,  // Custom round limit
+    OvertimeMaxRounds:   6,   // Custom overtime limit
     LogLevel:              slog.LevelWarn,
 }
 
