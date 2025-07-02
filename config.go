@@ -22,7 +22,7 @@ func NewConfig() Config {
 // SetDefaults sets default values for any unset fields
 func (c *Config) SetDefaults() {
 	if c.REGULATION_MAX_ROUNDS <= 0 {
-		c.REGULATION_MAX_ROUNDS = 15
+		c.REGULATION_MAX_ROUNDS = 13
 	}
 	if c.OVERTIME_MAX_ROUNDS <= 0 {
 		c.OVERTIME_MAX_ROUNDS = 3
