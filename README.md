@@ -76,7 +76,6 @@ The library provides type-safe events for all major game occurrences:
 
 - `Data` - Raw game state updates
 - `RoundEnd` - Round completion with winner information
-- `MapEnd` - Map completion
 - `MatchEnd` - Match completion
 
 ### Combat Events
