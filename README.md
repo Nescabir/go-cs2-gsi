@@ -1,5 +1,7 @@
 # Go CS2 GSI
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/nescabir/go-cs2-gsi.svg)](https://pkg.go.dev/github.com/nescabir/go-cs2-gsi)
+
 A high-performance Go library for handling Counter-Strike 2 Game State Integration (GSI) with type-safe event handling and real-time game data processing.
 
 ## 🎯 Features
