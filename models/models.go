@@ -1,4 +1,4 @@
-package structs
+package models
 
 type Side string
 
@@ -185,6 +185,10 @@ type Player struct {
 	Avatar        string
 }
 
+func (p *Player) IsAlive() bool {
+	return p.State.Health > 0
+}
+
 type Observer struct {
 	Activity   PlayerActivity
 	Spectarget string
@@ -259,7 +263,7 @@ type PhaseCountdown struct {
 }
 
 type Grenade struct {
-	Owner      int
+	Owner      string
 	Position   [3]float32
 	Velocity   [3]float32
 	Type       GrenadeType
@@ -312,9 +316,9 @@ type HurtEvent struct {
 type Events string
 
 const (
-	Data              Events = "data"
-	RoundEnd          Events = "roundEnd"
-	RoundStart        Events = "roundStart"
+	Data     Events = "data"
+	RoundEnd Events = "roundEnd"
+	// RoundStart        Events = "roundStart"
 	Kill              Events = "kill"
 	Hurt              Events = "hurt"
 	TimeoutStart      Events = "timeoutStart"
