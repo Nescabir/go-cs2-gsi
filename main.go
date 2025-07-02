@@ -14,15 +14,15 @@ type teams struct {
 }
 
 type CS2GSI struct {
-	config                Config
-	REGULATION_MAX_ROUNDS int
-	OVERTIME_MAX_ROUNDS   int
-	logger                *slog.Logger
-	damage                []models.RoundDamage
-	players               []models.Player
-	teams                 *teams
-	current               *models.State
-	last                  *models.State
+	config              Config
+	regulationMaxRounds int
+	overtimeMaxRounds   int
+	logger              *slog.Logger
+	damage              []models.RoundDamage
+	players             []models.Player
+	teams               *teams
+	current             *models.State
+	last                *models.State
 }
 
 func New(config Config) *CS2GSI {
@@ -39,12 +39,12 @@ func New(config Config) *CS2GSI {
 	slog.SetDefault(logger)
 
 	return &CS2GSI{
-		config:                config,
-		logger:                logger,
-		REGULATION_MAX_ROUNDS: config.REGULATION_MAX_ROUNDS,
-		OVERTIME_MAX_ROUNDS:   config.OVERTIME_MAX_ROUNDS,
-		damage:                make([]models.RoundDamage, 0, 60),
-		players:               make([]models.Player, 0, 16),
+		config:              config,
+		logger:              logger,
+		regulationMaxRounds: config.RegulationMaxRounds,
+		overtimeMaxRounds:   config.OvertimeMaxRounds,
+		damage:              make([]models.RoundDamage, 0, 60),
+		players:             make([]models.Player, 0, 16),
 		teams: &teams{
 			ct: nil,
 			t:  nil,

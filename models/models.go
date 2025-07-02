@@ -335,7 +335,7 @@ const (
 	BombPlanted       Events = "bombPlanted"
 	BombDefused       Events = "bombDefused"
 	BombExploded      Events = "bombExploded"
-	MapEnd            Events = "mapEnd"
-	MapStart          Events = "mapStart"
-	MatchEnd          Events = "matchEnd"
+	// MapEnd            Events = "mapEnd"
+	// MapStart          Events = "mapStart"
+	MatchEnd Events = "matchEnd"
 )

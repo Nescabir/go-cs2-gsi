@@ -229,7 +229,7 @@ func (gsi *CS2GSI) parsePhaseCountdown(raw *rawModels.PhaseCountdown) *models.Ph
 	}
 }
 
-func (gsi *CS2GSI) ParseGrenade(raw *rawModels.Grenade) *models.Grenade {
+func (gsi *CS2GSI) parseGrenade(raw *rawModels.Grenade) *models.Grenade {
 	if raw == nil {
 		return nil
 	}
@@ -258,11 +258,11 @@ func (gsi *CS2GSI) ParseGrenade(raw *rawModels.Grenade) *models.Grenade {
 	}
 }
 
-func (gsi *CS2GSI) ParseGrenades(raw map[string]*rawModels.Grenade) map[string]*models.Grenade {
+func (gsi *CS2GSI) parseGrenades(raw map[string]*rawModels.Grenade) map[string]*models.Grenade {
 	grenades := make(map[string]*models.Grenade)
 	if len(raw) > 0 {
 		for _, grenade := range raw {
-			grenades[string(grenade.Type)] = gsi.ParseGrenade(grenade)
+			grenades[string(grenade.Type)] = gsi.parseGrenade(grenade)
 		}
 	}
 	return grenades

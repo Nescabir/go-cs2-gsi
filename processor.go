@@ -65,7 +65,7 @@ func (gsi *CS2GSI) parseBasicState(rawState *rawModels.State, state *models.Stat
 	state.Round = gsi.parseRound(rawState.Round)
 	state.Phase_countdowns = gsi.parsePhaseCountdown(rawState.Phase_countdowns)
 	state.Auth = gsi.parseAuth(rawState.Auth)
-	state.Grenades = gsi.ParseGrenades(rawState.Grenades)
+	state.Grenades = gsi.parseGrenades(rawState.Grenades)
 
 	// Set up teams
 	gsi.teams = &teams{
@@ -149,7 +149,7 @@ func (gsi *CS2GSI) processRounds(rawState *rawModels.State, state *models.State)
 	var rounds []models.RoundInfo
 	if currentRound > 0 {
 		for i := 1; i <= currentRound; i++ {
-			result := getRoundWin(currentRound, gsi.teams, rawState.Map.Round_wins, i, gsi.REGULATION_MAX_ROUNDS, gsi.OVERTIME_MAX_ROUNDS)
+			result := getRoundWin(currentRound, gsi.teams, rawState.Map.Round_wins, i, gsi.regulationMaxRounds, gsi.overtimeMaxRounds)
 			if result == nil {
 				continue
 			}
@@ -273,7 +273,7 @@ func (gsi *CS2GSI) updateStateAndDetectEvents(state *models.State) error {
 	// Handle first state
 	if gsi.last == nil {
 		gsi.last = state
-		PublishData(state)
+		publishData(state)
 		return nil
 	}
 
@@ -299,7 +299,7 @@ func (gsi *CS2GSI) updateStateAndDetectEvents(state *models.State) error {
 	}
 
 	// Publish data and update last state
-	PublishData(state)
+	publishData(state)
 	gsi.last = state
 
 	return nil
@@ -325,12 +325,12 @@ func (gsi *CS2GSI) detectRoundEvents(state *models.State) error {
 		}
 
 		gsi.logger.Info("Round end detected", "winner", winner.Side, "loser", loser.Side, "score", fmt.Sprintf("%d-%d", winner.Score, loser.Score))
-		PublishRoundEnd(roundScore)
+		publishRoundEnd(roundScore)
 
 		// Check for match end
 		if roundScore.MapEnd && last.Map.Phase != models.MapPhaseGameOver {
 			gsi.logger.Info("Match end detected", "winner", winner.Side, "loser", loser.Side, "score", fmt.Sprintf("%d-%d", winner.Score, loser.Score))
-			PublishMatchEnd(roundScore)
+			publishMatchEnd(roundScore)
 		}
 	}
 
@@ -371,7 +371,7 @@ func (gsi *CS2GSI) detectBombEvents(state *models.State) error {
 		gsi.handleBombStateChanges(last.Bomb, state.Bomb)
 	} else if last.Bomb == nil && state.Bomb != nil && state.Bomb.State == models.BombStateExploded {
 		gsi.logger.Info("Bomb exploded")
-		PublishBombExploded(nil)
+		publishBombExploded(nil)
 	}
 
 	return nil
@@ -385,43 +385,43 @@ func (gsi *CS2GSI) handleBombStateChanges(lastBomb, currentBomb *models.Bomb) {
 		currentBomb.State != models.BombStatePlanted &&
 		currentBomb.State != models.BombStateDefusing {
 		gsi.logger.Info("Bomb plant stop detected", "player", lastBomb.Player.Name)
-		PublishBombPlantStop(lastBomb.Player)
+		publishBombPlantStop(lastBomb.Player)
 	}
 
 	// Bomb planted
 	if lastBomb.State == models.BombStatePlanting && currentBomb.State == models.BombStatePlanted {
 		gsi.logger.Info("Bomb planted", "player", lastBomb.Player.Name)
-		PublishBombPlanted(lastBomb.Player)
+		publishBombPlanted(lastBomb.Player)
 	}
 
 	// Bomb exploded
 	if lastBomb.State != models.BombStateExploded && currentBomb.State == models.BombStateExploded {
 		gsi.logger.Info("Bomb exploded")
-		PublishBombExploded(nil)
+		publishBombExploded(nil)
 	}
 
 	// Bomb defused
 	if lastBomb.State != models.BombStateDefused && currentBomb.State == models.BombStateDefused {
 		gsi.logger.Info("Bomb defused", "player", lastBomb.Player.Name)
-		PublishBombDefused(lastBomb.Player)
+		publishBombDefused(lastBomb.Player)
 	}
 
 	// Defuse start
 	if lastBomb.State != models.BombStateDefusing && currentBomb.State == models.BombStateDefusing {
 		gsi.logger.Info("Defuse start detected", "player", currentBomb.Player.Name)
-		PublishDefuseStart(currentBomb.Player)
+		publishDefuseStart(currentBomb.Player)
 	}
 
 	// Defuse end
 	if lastBomb.State == models.BombStateDefusing && currentBomb.State != models.BombStateDefusing {
 		gsi.logger.Info("Defuse end detected", "player", lastBomb.Player.Name)
-		PublishDefuseEnd(lastBomb.Player)
+		publishDefuseEnd(lastBomb.Player)
 	}
 
 	// Bomb plant start
 	if lastBomb.State != models.BombStatePlanting && currentBomb.State == models.BombStatePlanting {
 		gsi.logger.Info("Bomb plant start detected", "player", currentBomb.Player.Name)
-		PublishBombPlantStart(currentBomb.Player)
+		publishBombPlantStart(currentBomb.Player)
 	}
 }
 
@@ -435,20 +435,20 @@ func (gsi *CS2GSI) detectPhaseEvents(state *models.State) error {
 	// Intermission events
 	if state.Map.Phase == models.MapPhaseIntermission && last.Map.Phase != models.MapPhaseIntermission {
 		gsi.logger.Info("Intermission start detected")
-		PublishIntermissionStart(nil)
+		publishIntermissionStart(nil)
 	} else if state.Map.Phase != models.MapPhaseIntermission && last.Map.Phase == models.MapPhaseIntermission {
 		gsi.logger.Info("Intermission end detected")
-		PublishIntermissionEnd(nil)
+		publishIntermissionEnd(nil)
 	}
 
 	// Freezetime events
 	phase := state.Phase_countdowns.Phase
 	if phase == models.PhaseTypeFreezetime && last.Phase_countdowns.Phase != models.PhaseTypeFreezetime {
 		gsi.logger.Info("Freezetime start detected")
-		PublishFreezetimeStart(nil)
+		publishFreezetimeStart(nil)
 	} else if phase != models.PhaseTypeFreezetime && last.Phase_countdowns.Phase == models.PhaseTypeFreezetime {
 		gsi.logger.Info("Freezetime end detected")
-		PublishFreezetimeEnd(nil)
+		publishFreezetimeEnd(nil)
 	}
 
 	return nil
@@ -473,13 +473,13 @@ func (gsi *CS2GSI) detectTimeoutEvents(state *models.State) error {
 			team = gsi.teams.t
 		}
 		gsi.logger.Info("Timeout start detected", "team", team.Name, "side", team.Side)
-		PublishTimeoutStart(team)
+		publishTimeoutStart(team)
 	}
 
 	// Timeout end
 	if strings.HasPrefix(string(lastPhase), "timeout") && !strings.HasPrefix(string(phase), "timeout") {
 		gsi.logger.Info("Timeout end detected")
-		PublishTimeoutEnd(nil)
+		publishTimeoutEnd(nil)
 	}
 
 	return nil
@@ -497,7 +497,7 @@ func (gsi *CS2GSI) detectMVPEvents(state *models.State) error {
 		if previousPlayer, exists := last.AllPlayers[player.SteamId]; exists {
 			if player.Match_stats.Mvps > previousPlayer.Match_stats.Mvps {
 				gsi.logger.Info("MVP detected", "player", player.Name)
-				PublishMvp(player)
+				publishMvp(player)
 				break
 			}
 		}
