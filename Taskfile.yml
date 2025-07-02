@@ -12,5 +12,5 @@ tasks:
   #   silent: true
   test:
     cmds:
-      - cd test && go run main.go
+      - cd example && go run main.go
     silent: true
