@@ -12,7 +12,7 @@ type Config struct {
 // NewConfig creates a new Config with sensible defaults
 func NewConfig() Config {
 	return Config{
-		REGULATION_MAX_ROUNDS: 15,
+		REGULATION_MAX_ROUNDS: 13,
 		OVERTIME_MAX_ROUNDS:   3,
 		ServerAddr:            ":3000",
 		LogLevel:              slog.LevelInfo,
