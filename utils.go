@@ -150,11 +150,13 @@ func (gsi *CS2GSI) parseWeapon(raw *rawModels.Weapon) *models.Weapon {
 	}
 
 	return &models.Weapon{
-		Name:      raw.Name,
-		PaintKit:  raw.PaintKit,
-		Type:      parseWeaponType(string(raw.Type)),
-		State:     parseWeaponState(string(raw.State)),
-		Ammo_clip: raw.Ammo_clip,
+		Name:          raw.Name,
+		PaintKit:      raw.PaintKit,
+		Type:          parseWeaponType(string(raw.Type)),
+		State:         parseWeaponState(string(raw.State)),
+		Ammo_clip:     raw.Ammo_clip,
+		Ammo_clip_max: raw.Ammo_clip_max,
+		Ammo_reserve:  raw.Ammo_reserve,
 	}
 }
 
