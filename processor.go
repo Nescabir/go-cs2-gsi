@@ -60,8 +60,10 @@ func (gsi *CS2GSI) digest(rawState *rawModels.State) error {
 
 // parseBasicState parses the basic state information
 func (gsi *CS2GSI) parseBasicState(rawState *rawModels.State, state *models.State) error {
+	ctOrientation := getCTOrientation(rawState)
+
 	state.Provider = gsi.parseProvider(rawState.Provider)
-	state.Map = gsi.parseMap(rawState.Map)
+	state.Map = gsi.parseMap(rawState.Map, &ctOrientation)
 	state.Round = gsi.parseRound(rawState.Round)
 	state.Phase_countdowns = gsi.parsePhaseCountdown(rawState.Phase_countdowns)
 	state.Auth = gsi.parseAuth(rawState.Auth)
@@ -104,7 +106,7 @@ func (gsi *CS2GSI) parsePlayersAndTeams(rawState *rawModels.State, state *models
 		parsedPlayer.SteamId = steamId
 
 		// Set as current player if it's the observed player
-		if rawState.Player != nil && rawPlayer.Steamid == rawState.Player.Steamid {
+		if rawState.Player != nil && steamId == rawState.Player.Steamid {
 			state.Player = parsedPlayer
 		}
 

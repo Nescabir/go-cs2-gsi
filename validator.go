@@ -226,11 +226,11 @@ func (gsi *CS2GSI) validateMap(mapData *rawModels.Map) error {
 
 	// Validate team data
 	if err := gsi.validateTeam(mapData.Team_ct, "CT"); err != nil {
-		return fmt.Errorf("CT team validation failed: %w", err)
+		return fmt.Errorf("ct team validation failed: %w", err)
 	}
 
 	if err := gsi.validateTeam(mapData.Team_t, "T"); err != nil {
-		return fmt.Errorf("T team validation failed: %w", err)
+		return fmt.Errorf("t team validation failed: %w", err)
 	}
 
 	// Validate spectators count

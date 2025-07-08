@@ -7,6 +7,13 @@ const (
 	CTSide Side = "CT"
 )
 
+type Orientation string
+
+const (
+	OrientationLeft  Orientation = "left"
+	OrientationRight Orientation = "right"
+)
+
 type PlayerActivity string
 
 const (
@@ -206,6 +213,7 @@ type Team struct {
 	Name                     string
 	Flag                     string
 	Side                     Side
+	Orientation              Orientation
 }
 
 // player_state

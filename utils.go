@@ -84,14 +84,14 @@ func (gsi *CS2GSI) parseProvider(raw *rawModels.Provider) *models.Provider {
 	}
 }
 
-func (gsi *CS2GSI) parseMap(raw *rawModels.Map) *models.Map {
+func (gsi *CS2GSI) parseMap(raw *rawModels.Map, ctOrientation *models.Orientation) *models.Map {
 	return &models.Map{
 		Mode:                      raw.Mode,
 		Name:                      raw.Name,
 		Phase:                     parseMapPhase(string(raw.Phase)),
 		Round:                     raw.Round,
-		Team_ct:                   gsi.parseTeam(raw.Team_ct, models.CTSide),
-		Team_t:                    gsi.parseTeam(raw.Team_t, models.TSide),
+		Team_ct:                   gsi.parseTeam(raw.Team_ct, models.CTSide, ctOrientation),
+		Team_t:                    gsi.parseTeam(raw.Team_t, models.TSide, ctOrientation),
 		Num_matches_to_win_series: raw.Num_matches_to_win_series,
 		Current_spectators:        raw.Current_spectators,
 		Souvenirs_total:           raw.Souvenirs_total,
@@ -353,7 +353,19 @@ func (gsi *CS2GSI) parsePlayer(raw *rawModels.Player, teams *teams) *models.Play
 	return player
 }
 
-func (gsi *CS2GSI) parseTeam(raw *rawModels.Team, side models.Side) *models.Team {
+func (gsi *CS2GSI) parseTeam(raw *rawModels.Team, side models.Side, ctOrientation *models.Orientation) *models.Team {
+	var orientation models.Orientation = models.OrientationLeft
+
+	if ctOrientation != nil && *ctOrientation == models.OrientationRight && side == models.CTSide {
+		orientation = models.OrientationRight
+	} else if ctOrientation != nil && *ctOrientation == models.OrientationLeft && side == models.CTSide {
+		orientation = models.OrientationLeft
+	} else if ctOrientation != nil && *ctOrientation == models.OrientationRight && side == models.TSide {
+		orientation = models.OrientationLeft
+	} else if ctOrientation != nil && *ctOrientation == models.OrientationLeft && side == models.TSide {
+		orientation = models.OrientationRight
+	}
+
 	if raw == nil {
 		return &models.Team{
 			Logo:                     "",
@@ -364,6 +376,7 @@ func (gsi *CS2GSI) parseTeam(raw *rawModels.Team, side models.Side) *models.Team
 			Name:                     "",
 			Flag:                     "",
 			Side:                     side,
+			Orientation:              orientation,
 		}
 	}
 
@@ -376,6 +389,7 @@ func (gsi *CS2GSI) parseTeam(raw *rawModels.Team, side models.Side) *models.Team
 		Name:                     raw.Name,
 		Flag:                     raw.Flag,
 		Side:                     side,
+		Orientation:              orientation,
 	}
 }
 
@@ -716,4 +730,41 @@ func parseWeaponType(s string) models.WeaponType {
 	}
 
 	return weaponTypes[wt]
+}
+
+func getCTOrientation(raw *rawModels.State) models.Orientation {
+	var orientation models.Orientation
+
+	var examplePlayerT *rawModels.Player
+	var examplePlayerCT *rawModels.Player
+
+	// Find T player with observer_slot
+	for _, player := range raw.AllPlayers {
+		if player.Observer_slot != -1 && player.Team == rawModels.TSide {
+			examplePlayerT = player
+			break
+		}
+	}
+
+	// Find CT player with observer_slot
+	for _, player := range raw.AllPlayers {
+		if player.Observer_slot != -1 && player.Team == rawModels.CTSide {
+			examplePlayerCT = player
+			break
+		}
+	}
+
+	// Check if CT is on the left side
+	if examplePlayerCT != nil && examplePlayerCT.Observer_slot != -1 &&
+		examplePlayerT != nil && examplePlayerT.Observer_slot != -1 {
+		ctSlot := examplePlayerCT.Observer_slot
+		tSlot := examplePlayerT.Observer_slot
+		if ctSlot > tSlot {
+			orientation = models.OrientationRight
+		} else {
+			orientation = models.OrientationLeft
+		}
+	}
+
+	return orientation
 }

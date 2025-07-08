@@ -10,7 +10,7 @@ tasks:
   #   cmds:
   #     - echo "{{.GREETING}}"
   #   silent: true
-  test:
+  example:
     cmds:
       - cd example && go run main.go
     silent: true
