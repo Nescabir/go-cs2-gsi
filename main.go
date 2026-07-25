@@ -23,6 +23,7 @@ type CS2GSI struct {
 	teams               *teams
 	playerExtensions    []models.PlayerExtension
 	teamExtensions      TeamExtensionsConfig
+	payloadAcc          *payloadAcc
 	current             *models.State
 	last                *models.State
 }
@@ -49,6 +50,7 @@ func New(config Config) *CS2GSI {
 		teamExtensions:      config.TeamExtensions,
 		damage:              make([]models.RoundDamage, 0, 60),
 		players:             make([]models.Player, 0, 16),
+		payloadAcc:          newPayloadAcc(),
 		teams: &teams{
 			ct: nil,
 			t:  nil,

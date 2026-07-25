@@ -75,6 +75,9 @@ func (gsi *CS2GSI) initState() *models.State {
 }
 
 func (gsi *CS2GSI) parseProvider(raw *rawModels.Provider) *models.Provider {
+	if raw == nil {
+		return &models.Provider{}
+	}
 	return &models.Provider{
 		Name:      raw.Name,
 		AppId:     raw.AppId,

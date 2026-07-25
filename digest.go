@@ -13,8 +13,14 @@ import (
 func (gsi *CS2GSI) Digest(raw []byte) error {
 	publishRaw(raw)
 
+	normalized := NormalizeGSIPayload(raw)
+	merged, err := gsi.payloadAcc.Merge(normalized)
+	if err != nil {
+		merged = normalized
+	}
+
 	stateRaw := &rawModels.State{}
-	if err := json.Unmarshal(raw, stateRaw); err != nil {
+	if err := json.Unmarshal(merged, stateRaw); err != nil {
 		return fmt.Errorf("failed to decode JSON: %w", err)
 	}
 
