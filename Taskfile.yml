@@ -42,13 +42,13 @@ tasks:
       - go test ./...
 
   release:
-    desc: "Publish a module version (usage: task release VERSION=v0.2.0)"
+    desc: "Publish a module version (usage: task release VERSION=v0.3.0)"
     requires:
       vars: [VERSION]
     cmds:
       - go mod tidy
       - go test ./...
-      - git tag {{.VERSION}}
+      - git tag -m "Release {{.VERSION}}" {{.VERSION}}
       - git push origin {{.VERSION}}
       - cmd: go list -m github.com/nescabir/go-cs2-gsi@{{.VERSION}}
         env:
