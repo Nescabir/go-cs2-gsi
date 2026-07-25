@@ -1,0 +1,68 @@
+{
+  "previously": {
+    "player": {
+      "steamid": "76561198000000001",
+      "name": "Player1",
+      "team": "CT",
+      "state": { "health": 100, "armor": 0, "helmet": false, "flashed": 0, "smoked": 0, "burning": 0, "money": 0, "round_kills": 0, "round_killhs": 0, "round_totaldmg": 0, "equip_value": 0 },
+      "match_stats": { "kills": 0, "assists": 0, "deaths": 0, "mvps": 0, "score": 0 },
+      "weapons": {},
+      "position": "0, 0, 0",
+      "forward": "0, 0, 0"
+    }
+  },
+  "added": {
+    "player": {
+      "steamid": "76561198000000001",
+      "name": "Player1",
+      "team": "CT",
+      "state": { "health": 54, "armor": 0, "helmet": false, "flashed": 0, "smoked": 0, "burning": 0, "money": 0, "round_kills": 0, "round_killhs": 0, "round_totaldmg": 80, "equip_value": 0 },
+      "match_stats": { "kills": 0, "assists": 0, "deaths": 0, "mvps": 0, "score": 0 },
+      "weapons": {},
+      "position": "0, 0, 0",
+      "forward": "0, 0, 0"
+    }
+  },
+  "auth": { "token": "secret" },
+  "provider": { "name": "CS2", "appid": 730, "version": 0, "steamid": "", "timestamp": 0 },
+  "map": {
+    "mode": "competitive",
+    "name": "de_dust2",
+    "phase": "live",
+    "round": 5,
+    "team_ct": { "score": 3, "name": "CT", "consecutive_round_losses": 0, "timeouts_remaining": 3, "matches_won_this_series": 0, "flag": "" },
+    "team_t": { "score": 2, "name": "T", "consecutive_round_losses": 0, "timeouts_remaining": 3, "matches_won_this_series": 0, "flag": "" },
+    "num_matches_to_win_series": 0,
+    "current_spectators": 0,
+    "souvenirs_total": 0,
+    "round_wins": { "1": "ct_win_elimination" }
+  },
+  "round": { "phase": "live", "bomb": "", "win_team": "" },
+  "phase_countdowns": { "phase": "timeout_ct", "phase_ends_in": "30.0" },
+  "bomb": { "state": "carried", "countdown": "0", "position": "0, 0, 0", "player": "76561198000000001" },
+  "grenades": {},
+  "allplayers": {
+    "76561198000000001": {
+      "name": "Player1",
+      "steamid": "76561198000000001",
+      "team": "CT",
+      "observer_slot": 0,
+      "state": { "health": 54, "armor": 0, "helmet": false, "flashed": 0, "smoked": 0, "burning": 0, "money": 800, "round_kills": 0, "round_killhs": 0, "round_totaldmg": 80, "equip_value": 0 },
+      "match_stats": { "kills": 2, "assists": 0, "deaths": 1, "mvps": 0, "score": 0 },
+      "weapons": {},
+      "position": "0, 0, 0",
+      "forward": "0, 0, 0"
+    }
+  },
+  "player": {
+    "steamid": "76561198000000001",
+    "name": "Player1",
+    "team": "CT",
+    "activity": "playing",
+    "state": { "health": 54, "armor": 0, "helmet": false, "flashed": 0, "smoked": 0, "burning": 0, "money": 800, "round_kills": 0, "round_killhs": 0, "round_totaldmg": 80, "equip_value": 0 },
+    "match_stats": { "kills": 2, "assists": 0, "deaths": 1, "mvps": 0, "score": 0 },
+    "weapons": {},
+    "position": "0, 0, 0",
+    "forward": "0, 0, 0"
+  }
+}

@@ -46,6 +46,10 @@ func (gsi *CS2GSI) digest(rawState *rawModels.State) error {
 		return err
 	}
 
+	if len(gsi.damage) > 0 {
+		state.Damage = append([]models.RoundDamage(nil), gsi.damage...)
+	}
+
 	// Update state and detect events
 	if err := gsi.updateStateAndDetectEvents(state); err != nil {
 		return err
@@ -65,17 +69,18 @@ func (gsi *CS2GSI) parseBasicState(rawState *rawModels.State, state *models.Stat
 	state.Provider = gsi.parseProvider(rawState.Provider)
 	state.Map = gsi.parseMap(rawState.Map, &ctOrientation)
 	state.Round = gsi.parseRound(rawState.Round)
-	state.Phase_countdowns = gsi.parsePhaseCountdown(rawState.Phase_countdowns)
-	state.Auth = gsi.parseAuth(rawState.Auth)
-	state.Grenades = gsi.parseGrenades(rawState.Grenades)
 
-	// Set up teams
 	gsi.teams = &teams{
 		ct: state.Map.Team_ct,
 		t:  state.Map.Team_t,
 	}
 
-	// Parse bomb and observer
+	state.Phase_countdowns = gsi.parsePhaseCountdown(rawState.Phase_countdowns, state.Map.Team_ct, state.Map.Team_t)
+	state.Auth = gsi.parseAuth(rawState.Auth)
+	state.Grenades = gsi.parseGrenades(rawState.Grenades)
+	state.Previously = gsi.parseDelta(rawState.Previously, rawState.Map.Name)
+	state.Added = gsi.parseDelta(rawState.Added, rawState.Map.Name)
+
 	state.Bomb = gsi.parseBomb(rawState.Bomb, rawState.AllPlayers, gsi.teams, &rawState.Map.Name)
 	state.Observer = &models.Observer{
 		Activity:   models.PlayerActivity(rawState.Player.Activity),
@@ -97,7 +102,7 @@ func (gsi *CS2GSI) parsePlayersAndTeams(rawState *rawModels.State, state *models
 	gsi.players = gsi.players[:0]
 
 	for steamId, rawPlayer := range rawState.AllPlayers {
-		parsedPlayer := gsi.parsePlayer(rawPlayer, gsi.teams)
+		parsedPlayer := gsi.parsePlayer(rawPlayer, gsi.teams, steamId)
 		if parsedPlayer == nil {
 			gsi.logger.Warn("failed to parse player", "steam_id", steamId)
 			continue // Skip invalid players
@@ -179,14 +184,16 @@ func (gsi *CS2GSI) processDamage(rawState *rawModels.State, state *models.State)
 		return nil
 	}
 
-	// Add player damage for current round
+	// Replace player damage for current round
 	if len(gsi.players) > 0 {
+		players := make([]models.RoundPlayerDamage, 0, len(gsi.players))
 		for _, player := range gsi.players {
-			currentRoundDamage.Players = append(currentRoundDamage.Players, models.RoundPlayerDamage{
+			players = append(players, models.RoundPlayerDamage{
 				SteamId: player.SteamId,
 				Damage:  player.State.Round_totaldmg,
 			})
 		}
+		currentRoundDamage.Players = players
 	}
 
 	return nil
@@ -203,32 +210,33 @@ func (gsi *CS2GSI) getCurrentRoundForDamage(rawState *rawModels.State) int {
 
 // findOrCreateRoundDamage finds or creates a round damage entry
 func (gsi *CS2GSI) findOrCreateRoundDamage(currentRound int) *models.RoundDamage {
-	// Find existing damage for this round
-	for _, damage := range gsi.damage {
-		if damage.Round == currentRound {
-			return &damage
+	for i := range gsi.damage {
+		if gsi.damage[i].Round == currentRound {
+			return &gsi.damage[i]
 		}
 	}
 
-	// Create new damage entry
-	newDamage := &models.RoundDamage{
+	gsi.damage = append(gsi.damage, models.RoundDamage{
 		Round:   currentRound,
 		Players: make([]models.RoundPlayerDamage, 0, 16),
-	}
-	gsi.damage = append(gsi.damage, *newDamage)
-	return newDamage
+	})
+	return &gsi.damage[len(gsi.damage)-1]
 }
 
 // calculatePlayerStats calculates player statistics including ADR
 func (gsi *CS2GSI) calculatePlayerStats(rawState *rawModels.State, state *models.State) error {
-	if len(gsi.players) == 0 || gsi.current == nil {
+	if len(state.AllPlayers) == 0 {
 		return nil
 	}
 
 	currentRoundForDamage := gsi.getCurrentRoundForDamage(rawState)
+	mapRound := rawState.Map.Round
+	if mapRound == 0 {
+		mapRound = 1
+	}
 
-	for _, player := range gsi.players {
-		adr := gsi.calculatePlayerADR(player, currentRoundForDamage)
+	for _, player := range state.AllPlayers {
+		adr := gsi.calculatePlayerADR(*player, currentRoundForDamage, mapRound)
 		player.State.Adr = int(math.Floor(adr))
 	}
 
@@ -236,7 +244,7 @@ func (gsi *CS2GSI) calculatePlayerStats(rawState *rawModels.State, state *models
 }
 
 // calculatePlayerADR calculates the Average Damage per Round for a player
-func (gsi *CS2GSI) calculatePlayerADR(player models.Player, currentRound int) float64 {
+func (gsi *CS2GSI) calculatePlayerADR(player models.Player, currentRound int, mapRound int) float64 {
 	// Get damage for previous rounds
 	damageForRound := make([]models.RoundDamage, 0, 60)
 	for _, damage := range gsi.damage {
@@ -261,10 +269,10 @@ func (gsi *CS2GSI) calculatePlayerADR(player models.Player, currentRound int) fl
 	}
 
 	// Calculate ADR
-	if currentRound == 0 {
+	if mapRound == 0 {
 		return float64(totalDamage)
 	}
-	return float64(totalDamage) / float64(currentRound)
+	return float64(totalDamage) / float64(mapRound)
 }
 
 // updateStateAndDetectEvents updates the current state and detects events

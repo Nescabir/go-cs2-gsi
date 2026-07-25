@@ -176,8 +176,8 @@ type State struct {
 	AllPlayers       map[string]*Player  `json:"allplayers"`
 	Bomb             *Bomb               `json:"bomb"`
 	Grenades         map[string]*Grenade `json:"grenades"`
-	Previously       *State              `json:"previously"`
-	Added            *State              `json:"added"`
+	Previously       *DeltaState         `json:"previously"`
+	Added            *DeltaState         `json:"added"`
 	Phase_countdowns *PhaseCountdown     `json:"phase_countdowns"`
 	Auth             *Auth               `json:"auth"`
 }
@@ -219,22 +219,24 @@ func (s *State) UnmarshalJSON(data []byte) error {
 		}
 	}
 
-	// Handle previously field manually - skip boolean values
+	// Handle previously field manually - shallow delta parse
 	if boolVal, ok := temp.Previously.(bool); ok && !boolVal {
 		s.Previously = nil
 	} else if temp.Previously != nil {
-		// Skip processing nested State to avoid infinite recursion
-		// The nested State will be processed by the main unmarshaling
-		s.Previously = nil
+		var delta DeltaState
+		if err := unmarshalDeltaField(temp.Previously, &delta); err == nil {
+			s.Previously = &delta
+		}
 	}
 
-	// Handle added field manually - skip boolean values
+	// Handle added field manually - shallow delta parse
 	if boolVal, ok := temp.Added.(bool); ok && !boolVal {
 		s.Added = nil
 	} else if temp.Added != nil {
-		// Skip processing nested State to avoid infinite recursion
-		// The nested State will be processed by the main unmarshaling
-		s.Added = nil
+		var delta DeltaState
+		if err := unmarshalDeltaField(temp.Added, &delta); err == nil {
+			s.Added = &delta
+		}
 	}
 
 	return nil
@@ -509,10 +511,11 @@ type PhaseCountdown struct {
 }
 
 type Grenade struct {
-	Owner      string      `json:"owner"`
-	Position   string      `json:"position"`
-	Velocity   string      `json:"velocity"`
-	Type       GrenadeType `json:"type"`
-	Lifetime   string      `json:"lifetime"`
-	EffectTime float32     `json:"effect_time"`
+	Owner      string            `json:"owner"`
+	Position   string            `json:"position"`
+	Velocity   string            `json:"velocity"`
+	Type       GrenadeType       `json:"type"`
+	Lifetime   string            `json:"lifetime"`
+	EffectTime string            `json:"effecttime"`
+	Flames     map[string]string `json:"flames"`
 }

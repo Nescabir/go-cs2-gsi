@@ -209,7 +209,7 @@ func (gsi *CS2GSI) parseAuth(raw *rawModels.Auth) *models.Auth {
 	}
 }
 
-func (gsi *CS2GSI) parsePhaseCountdown(raw *rawModels.PhaseCountdown) *models.PhaseCountdown {
+func (gsi *CS2GSI) parsePhaseCountdown(raw *rawModels.PhaseCountdown, teamCT, teamT *models.Team) *models.PhaseCountdown {
 	if raw == nil {
 		return nil
 	}
@@ -225,10 +225,20 @@ func (gsi *CS2GSI) parsePhaseCountdown(raw *rawModels.PhaseCountdown) *models.Ph
 		}
 	}
 
-	return &models.PhaseCountdown{
-		Phase:         parsePhaseType(string(raw.Phase)),
+	phase := parsePhaseType(string(raw.Phase))
+	countdown := &models.PhaseCountdown{
+		Phase:         phase,
 		Phase_ends_in: float32(phase_ends_in),
 	}
+
+	switch phase {
+	case models.PhaseTypeTimeoutCT:
+		countdown.Timeout_team = teamCT
+	case models.PhaseTypeTimeoutT:
+		countdown.Timeout_team = teamT
+	}
+
+	return countdown
 }
 
 func (gsi *CS2GSI) parseGrenade(raw *rawModels.Grenade) *models.Grenade {
@@ -250,22 +260,46 @@ func (gsi *CS2GSI) parseGrenade(raw *rawModels.Grenade) *models.Grenade {
 		}
 	}
 
+	var effectTime float32
+	if raw.EffectTime != "" {
+		v, err := strconv.ParseFloat(strings.TrimSpace(raw.EffectTime), 64)
+		if err != nil {
+			gsi.logger.Warn("failed to parse grenade effecttime", "value", raw.EffectTime, "error", err)
+		} else {
+			effectTime = float32(v)
+		}
+	}
+
+	var flames [][3]float32
+	for _, flameStr := range raw.Flames {
+		if v := parseVector(flameStr); v != [3]float32{} {
+			flames = append(flames, v)
+		}
+	}
+
 	return &models.Grenade{
 		Owner:      raw.Owner,
 		Position:   position,
 		Velocity:   velocity,
 		Type:       parseGrenadeType(string(raw.Type)),
 		Lifetime:   float32(lifetime),
-		EffectTime: float32(raw.EffectTime),
+		EffectTime: effectTime,
+		Flames:     flames,
 	}
 }
 
 func (gsi *CS2GSI) parseGrenades(raw map[string]*rawModels.Grenade) map[string]*models.Grenade {
-	grenades := make(map[string]*models.Grenade)
-	if len(raw) > 0 {
-		for _, grenade := range raw {
-			grenades[string(grenade.Type)] = gsi.parseGrenade(grenade)
+	grenades := make(map[string]*models.Grenade, len(raw))
+	for id, grenade := range raw {
+		if grenade == nil {
+			continue
 		}
+		g := gsi.parseGrenade(grenade)
+		if g == nil {
+			continue
+		}
+		g.ID = id
+		grenades[id] = g
 	}
 	return grenades
 }
@@ -300,7 +334,7 @@ func (gsi *CS2GSI) parseBomb(raw *rawModels.Bomb, allPlayers map[string]*rawMode
 		if !ok {
 			gsi.logger.Warn("bomb player not found in allPlayers", "player", raw.Player)
 		} else {
-			player = gsi.parsePlayer(rawPlayer, teams)
+			player = gsi.parsePlayer(rawPlayer, teams, raw.Player)
 		}
 	}
 
@@ -313,7 +347,16 @@ func (gsi *CS2GSI) parseBomb(raw *rawModels.Bomb, allPlayers map[string]*rawMode
 	}
 }
 
-func (gsi *CS2GSI) parsePlayer(raw *rawModels.Player, teams *teams) *models.Player {
+func (gsi *CS2GSI) findPlayerExtension(steamID string) *models.PlayerExtension {
+	for i := range gsi.playerExtensions {
+		if gsi.playerExtensions[i].SteamId == steamID {
+			return &gsi.playerExtensions[i]
+		}
+	}
+	return nil
+}
+
+func (gsi *CS2GSI) parsePlayer(raw *rawModels.Player, teams *teams, steamID string) *models.Player {
 	if raw == nil {
 		return nil
 	}
@@ -330,17 +373,36 @@ func (gsi *CS2GSI) parsePlayer(raw *rawModels.Player, teams *teams) *models.Play
 	case rawModels.TSide:
 		team = teams.t
 	default:
-		gsi.logger.Warn("unknown team for player", "team", raw.Team, "steamId", raw.Steamid)
-		team = &models.Team{} // Default empty team
+		gsi.logger.Warn("unknown team for player", "team", raw.Team, "steamId", steamID)
+		team = &models.Team{}
 	}
 
 	position := parseVector(raw.Position)
 	forward := parseVector(raw.Forward)
+	extension := gsi.findPlayerExtension(steamID)
+
+	name := raw.Name
+	avatar := ""
+	country := ""
+	realName := ""
+	extra := map[string]string{}
+	if extension != nil {
+		if extension.Name != "" {
+			name = extension.Name
+		}
+		avatar = extension.Avatar
+		country = extension.Country
+		realName = extension.RealName
+		if extension.Extra != nil {
+			extra = extension.Extra
+		}
+	}
 
 	player := &models.Player{
-		SteamId:       raw.Steamid,
+		SteamId:       steamID,
 		Clan:          raw.Clan,
-		Name:          raw.Name,
+		Name:          name,
+		DefaultName:   raw.Name,
 		Observer_slot: raw.Observer_slot,
 		Team:          team,
 		Activity:      parsePlayerActivity(string(raw.Activity)),
@@ -349,7 +411,10 @@ func (gsi *CS2GSI) parsePlayer(raw *rawModels.Player, teams *teams) *models.Play
 		Match_stats:   gsi.parsePlayerMatchStats(raw.Match_stats),
 		Position:      position,
 		Forward:       forward,
-		Avatar:        "",
+		Avatar:        avatar,
+		Country:       country,
+		RealName:      realName,
+		Extra:         extra,
 	}
 
 	return player
@@ -368,21 +433,25 @@ func (gsi *CS2GSI) parseTeam(raw *rawModels.Team, side models.Side, ctOrientatio
 		orientation = models.OrientationRight
 	}
 
+	ext := gsi.teamExtensionForOrientation(orientation)
+
 	if raw == nil {
-		return &models.Team{
+		team := &models.Team{
 			Logo:                     "",
 			Score:                    0,
 			Consecutive_round_losses: 0,
 			Timeouts_remaining:       0,
 			Matches_won_this_series:  0,
-			Name:                     "",
+			Name:                     defaultTeamName(side),
 			Flag:                     "",
 			Side:                     side,
 			Orientation:              orientation,
+			Extra:                    map[string]string{},
 		}
+		return gsi.applyTeamExtension(team, ext)
 	}
 
-	return &models.Team{
+	team := &models.Team{
 		Logo:                     raw.Logo,
 		Score:                    raw.Score,
 		Consecutive_round_losses: raw.Consecutive_round_losses,
@@ -392,7 +461,77 @@ func (gsi *CS2GSI) parseTeam(raw *rawModels.Team, side models.Side, ctOrientatio
 		Flag:                     raw.Flag,
 		Side:                     side,
 		Orientation:              orientation,
+		Extra:                    map[string]string{},
 	}
+	if team.Name == "" {
+		team.Name = defaultTeamName(side)
+	}
+	return gsi.applyTeamExtension(team, ext)
+}
+
+func defaultTeamName(side models.Side) string {
+	if side == models.CTSide {
+		return "Counter-Terrorists"
+	}
+	return "Terrorists"
+}
+
+func (gsi *CS2GSI) teamExtensionForOrientation(orientation models.Orientation) *models.TeamExtension {
+	if orientation == models.OrientationLeft {
+		return gsi.teamExtensions.Left
+	}
+	return gsi.teamExtensions.Right
+}
+
+func (gsi *CS2GSI) applyTeamExtension(team *models.Team, ext *models.TeamExtension) *models.Team {
+	if ext == nil {
+		return team
+	}
+	if ext.Logo != "" {
+		team.Logo = ext.Logo
+	}
+	if ext.Name != "" {
+		team.Name = ext.Name
+	}
+	if ext.MapScore != 0 {
+		team.Matches_won_this_series = ext.MapScore
+	}
+	team.Id = ext.Id
+	team.Country = ext.Country
+	if ext.Extra != nil {
+		team.Extra = ext.Extra
+	}
+	return team
+}
+
+func (gsi *CS2GSI) parseDelta(raw *rawModels.DeltaState, mapName string) *models.StateDelta {
+	if raw == nil {
+		return nil
+	}
+
+	delta := &models.StateDelta{}
+	if raw.Player != nil {
+		delta.Player = gsi.parsePlayer(&raw.Player.Player, gsi.teams, raw.Player.Steamid)
+	}
+	if len(raw.AllPlayers) > 0 {
+		delta.AllPlayers = make(map[string]*models.Player, len(raw.AllPlayers))
+		for steamID, player := range raw.AllPlayers {
+			delta.AllPlayers[steamID] = gsi.parsePlayer(player, gsi.teams, steamID)
+		}
+	}
+	if raw.Bomb != nil {
+		delta.Bomb = gsi.parseBomb(raw.Bomb, raw.AllPlayers, gsi.teams, &mapName)
+	}
+	if raw.Round != nil {
+		delta.Round = gsi.parseRound(raw.Round)
+	}
+	if len(raw.Grenades) > 0 {
+		delta.Grenades = gsi.parseGrenades(raw.Grenades)
+	}
+	if raw.Phase_countdowns != nil && gsi.teams != nil {
+		delta.Phase_countdowns = gsi.parsePhaseCountdown(raw.Phase_countdowns, gsi.teams.ct, gsi.teams.t)
+	}
+	return delta
 }
 
 func parseVector(raw string) [3]float32 {
@@ -400,7 +539,12 @@ func parseVector(raw string) [3]float32 {
 		return [3]float32{0, 0, 0}
 	}
 
-	parts := strings.Split(raw, ", ")
+	var parts []string
+	if strings.Contains(raw, ", ") {
+		parts = strings.Split(raw, ", ")
+	} else {
+		parts = strings.Split(raw, ",")
+	}
 	if len(parts) != 3 {
 		return [3]float32{0, 0, 0}
 	}
@@ -678,6 +822,11 @@ func parsePhaseType(s string) models.PhaseType {
 }
 
 func parseGrenadeType(s string) models.GrenadeType {
+	s = strings.ToLower(strings.TrimSpace(s))
+	if s == "flashbang" {
+		s = "flash"
+	}
+
 	grenadeTypes := map[rawModels.GrenadeType]models.GrenadeType{
 		rawModels.GrenadeTypeFlash:      models.GrenadeTypeFlash,
 		rawModels.GrenadeTypeDecoy:      models.GrenadeTypeDecoy,

@@ -21,6 +21,8 @@ type CS2GSI struct {
 	damage              []models.RoundDamage
 	players             []models.Player
 	teams               *teams
+	playerExtensions    []models.PlayerExtension
+	teamExtensions      TeamExtensionsConfig
 	current             *models.State
 	last                *models.State
 }
@@ -43,6 +45,8 @@ func New(config Config) *CS2GSI {
 		logger:              logger,
 		regulationMaxRounds: config.RegulationMaxRounds,
 		overtimeMaxRounds:   config.OvertimeMaxRounds,
+		playerExtensions:    config.PlayerExtensions,
+		teamExtensions:      config.TeamExtensions,
 		damage:              make([]models.RoundDamage, 0, 60),
 		players:             make([]models.Player, 0, 16),
 		teams: &teams{

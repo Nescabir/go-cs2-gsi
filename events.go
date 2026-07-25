@@ -24,27 +24,26 @@ type eventName[T any] string
 
 // Event names with their associated types
 var (
-	Data     eventName[*models.State] = eventName[*models.State](string(models.Data))
-	RoundEnd eventName[*models.Score] = eventName[*models.Score](string(models.RoundEnd))
-	// Kill              eventName[*models.KillEvent] = eventName[*models.KillEvent](string(models.Kill))
-	// Hurt              eventName[*models.HurtEvent] = eventName[*models.HurtEvent](string(models.Hurt))
-	TimeoutStart      eventName[*models.Team]   = eventName[*models.Team](string(models.TimeoutStart))
-	TimeoutEnd        eventName[*models.Team]   = eventName[*models.Team](string(models.TimeoutEnd))
-	Mvp               eventName[*models.Player] = eventName[*models.Player](string(models.Mvp))
-	FreezetimeStart   eventName[*models.Player] = eventName[*models.Player](string(models.FreezetimeStart))
-	FreezetimeEnd     eventName[*models.Player] = eventName[*models.Player](string(models.FreezetimeEnd))
-	IntermissionStart eventName[*models.Player] = eventName[*models.Player](string(models.IntermissionStart))
-	IntermissionEnd   eventName[*models.Player] = eventName[*models.Player](string(models.IntermissionEnd))
-	DefuseStart       eventName[*models.Player] = eventName[*models.Player](string(models.DefuseStart))
-	DefuseEnd         eventName[*models.Player] = eventName[*models.Player](string(models.DefuseEnd))
-	BombPlantStart    eventName[*models.Player] = eventName[*models.Player](string(models.BombPlantStart))
-	BombPlantStop     eventName[*models.Player] = eventName[*models.Player](string(models.BombPlantStop))
-	BombPlanted       eventName[*models.Player] = eventName[*models.Player](string(models.BombPlanted))
-	BombDefused       eventName[*models.Player] = eventName[*models.Player](string(models.BombDefused))
-	BombExploded      eventName[*models.Player] = eventName[*models.Player](string(models.BombExploded))
-	// MapEnd            eventName[*models.Score]     = eventName[*models.Score](string(models.MapEnd))
-	// MapStart          eventName[*models.Score]     = eventName[*models.Score](string(models.MapStart))
-	MatchEnd eventName[*models.Score] = eventName[*models.Score](string(models.MatchEnd))
+	Raw               eventName[[]byte]            = eventName[[]byte](string(models.Raw))
+	Data              eventName[*models.State]     = eventName[*models.State](string(models.Data))
+	RoundEnd          eventName[*models.Score]     = eventName[*models.Score](string(models.RoundEnd))
+	Kill              eventName[*models.KillEvent] = eventName[*models.KillEvent](string(models.Kill))
+	Hurt              eventName[*models.HurtEvent] = eventName[*models.HurtEvent](string(models.Hurt))
+	TimeoutStart      eventName[*models.Team]      = eventName[*models.Team](string(models.TimeoutStart))
+	TimeoutEnd        eventName[*models.Team]      = eventName[*models.Team](string(models.TimeoutEnd))
+	Mvp               eventName[*models.Player]    = eventName[*models.Player](string(models.Mvp))
+	FreezetimeStart   eventName[*models.Player]    = eventName[*models.Player](string(models.FreezetimeStart))
+	FreezetimeEnd     eventName[*models.Player]    = eventName[*models.Player](string(models.FreezetimeEnd))
+	IntermissionStart eventName[*models.Player]    = eventName[*models.Player](string(models.IntermissionStart))
+	IntermissionEnd   eventName[*models.Player]    = eventName[*models.Player](string(models.IntermissionEnd))
+	DefuseStart       eventName[*models.Player]    = eventName[*models.Player](string(models.DefuseStart))
+	DefuseEnd         eventName[*models.Player]    = eventName[*models.Player](string(models.DefuseEnd))
+	BombPlantStart    eventName[*models.Player]    = eventName[*models.Player](string(models.BombPlantStart))
+	BombPlantStop     eventName[*models.Player]    = eventName[*models.Player](string(models.BombPlantStop))
+	BombPlanted       eventName[*models.Player]    = eventName[*models.Player](string(models.BombPlanted))
+	BombDefused       eventName[*models.Player]    = eventName[*models.Player](string(models.BombDefused))
+	BombExploded      eventName[*models.Player]    = eventName[*models.Player](string(models.BombExploded))
+	MatchEnd          eventName[*models.Score]     = eventName[*models.Score](string(models.MatchEnd))
 )
 
 // Subscribe registers a handler for a specific event type
@@ -75,6 +74,13 @@ func publish[T any](event Event[T]) {
 }
 
 // Helper functions for type-safe event publishing
+func publishRaw(data []byte) {
+	publish(Event[[]byte]{
+		Name: string(models.Raw),
+		Data: data,
+	})
+}
+
 func publishData(data *models.State) {
 	publish(Event[*models.State]{
 		Name: string(models.Data),
@@ -89,19 +95,19 @@ func publishRoundEnd(data *models.Score) {
 	})
 }
 
-// func publishKill(data *models.KillEvent) {
-// 	publish(Event[*models.KillEvent]{
-// 		Name: string(models.Kill),
-// 		Data: data,
-// 	})
-// }
+func publishKill(data *models.KillEvent) {
+	publish(Event[*models.KillEvent]{
+		Name: string(models.Kill),
+		Data: data,
+	})
+}
 
-// func publishHurt(data *models.HurtEvent) {
-// 	publish(Event[*models.HurtEvent]{
-// 		Name: string(models.Hurt),
-// 		Data: data,
-// 	})
-// }
+func publishHurt(data *models.HurtEvent) {
+	publish(Event[*models.HurtEvent]{
+		Name: string(models.Hurt),
+		Data: data,
+	})
+}
 
 func publishTimeoutStart(data *models.Team) {
 	publish(Event[*models.Team]{
@@ -200,20 +206,6 @@ func publishBombExploded(data *models.Player) {
 		Data: data,
 	})
 }
-
-// func publishMapEnd(data *models.Score) {
-// 	publish(Event[*models.Score]{
-// 		Name: string(models.MapEnd),
-// 		Data: data,
-// 	})
-// }
-
-// func publishMapStart(data *models.Score) {
-// 	publish(Event[*models.Score]{
-// 		Name: string(models.MapStart),
-// 		Data: data,
-// 	})
-// }
 
 func publishMatchEnd(data *models.Score) {
 	publish(Event[*models.Score]{

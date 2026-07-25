@@ -1,0 +1,14 @@
+{
+  "name": "player_hurt",
+  "clientTime": 12345.67,
+  "keys": {
+    "userid": { "value": 3, "xuid": "76561198000000002" },
+    "attacker": { "value": 5, "xuid": "76561198000000001" },
+    "health": 45,
+    "armor": 80,
+    "weapon": "ak47",
+    "dmg_health": 55,
+    "dmg_armor": 20,
+    "hitgroup": 1
+  }
+}

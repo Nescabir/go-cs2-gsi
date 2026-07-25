@@ -1,0 +1,17 @@
+{
+  "name": "player_death",
+  "clientTime": 12345.67,
+  "keys": {
+    "userid": { "value": 3, "xuid": "76561198000000002" },
+    "attacker": { "value": 5, "xuid": "76561198000000001" },
+    "assister": { "value": 0, "xuid": "0" },
+    "assistedflash": false,
+    "weapon": "ak47",
+    "headshot": true,
+    "attackerblind": false,
+    "thrusmoke": false,
+    "noscope": false,
+    "penetrated": 1,
+    "attackerinair": false
+  }
+}

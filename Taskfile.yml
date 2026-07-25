@@ -2,15 +2,54 @@
 
 version: "3"
 
-vars:
-  # GREETING: Hello, World!
-
 tasks:
-  # default:
-  #   cmds:
-  #     - echo "{{.GREETING}}"
-  #   silent: true
-  example:
+  default:
     cmds:
-      - cd example && go run main.go
+      - task: test
     silent: true
+
+  test:
+    cmds:
+      - go test ./... -count=1
+
+  vet:
+    cmds:
+      - go vet ./...
+
+  fmt:
+    cmds:
+      - go fmt ./...
+
+  build:
+    cmds:
+      - go build ./...
+
+  tidy:
+    cmds:
+      - go mod tidy
+
+  check:
+    deps:
+      - fmt
+      - vet
+      - test
+
+  release-check:
+    desc: Pre-release checks without tagging
+    cmds:
+      - go mod tidy
+      - go vet ./...
+      - go test ./...
+
+  release:
+    desc: "Publish a module version (usage: task release VERSION=v0.2.0)"
+    requires:
+      vars: [VERSION]
+    cmds:
+      - go mod tidy
+      - go test ./...
+      - git tag {{.VERSION}}
+      - git push origin {{.VERSION}}
+      - cmd: go list -m github.com/nescabir/go-cs2-gsi@{{.VERSION}}
+        env:
+          GOPROXY: proxy.golang.org

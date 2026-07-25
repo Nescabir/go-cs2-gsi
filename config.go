@@ -1,18 +1,30 @@
 package cs2gsi
 
-import "log/slog"
+import (
+	"log/slog"
+
+	models "github.com/nescabir/go-cs2-gsi/models"
+)
+
+type TeamExtensionsConfig struct {
+	Left  *models.TeamExtension
+	Right *models.TeamExtension
+}
 
 type Config struct {
 	RegulationMaxRounds int
 	OvertimeMaxRounds   int
 	ServerAddr          string
 	LogLevel            slog.Level
+	ExpectedToken       string
+	PlayerExtensions    []models.PlayerExtension
+	TeamExtensions      TeamExtensionsConfig
 }
 
 // NewConfig creates a new Config with sensible defaults
 func NewConfig() Config {
 	return Config{
-		RegulationMaxRounds: 13,
+		RegulationMaxRounds: 12,
 		OvertimeMaxRounds:   3,
 		ServerAddr:          ":3000",
 		LogLevel:            slog.LevelInfo,
@@ -22,7 +34,7 @@ func NewConfig() Config {
 // SetDefaults sets default values for any unset fields
 func (c *Config) SetDefaults() {
 	if c.RegulationMaxRounds <= 0 {
-		c.RegulationMaxRounds = 13
+		c.RegulationMaxRounds = 12
 	}
 	if c.OvertimeMaxRounds <= 0 {
 		c.OvertimeMaxRounds = 3

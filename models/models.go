@@ -132,10 +132,39 @@ type State struct {
 	AllPlayers       map[string]*Player // allplayers_*: steamid64 ...
 	Bomb             *Bomb
 	Grenades         map[string]*Grenade
-	Previously       *State
-	Added            *State
+	Previously       *StateDelta
+	Added            *StateDelta
 	Phase_countdowns *PhaseCountdown
 	Auth             *Auth
+	Damage           []RoundDamage
+}
+
+// StateDelta is a shallow parsed GSI delta (previously / added blocks).
+type StateDelta struct {
+	Player           *Player
+	AllPlayers       map[string]*Player
+	Bomb             *Bomb
+	Round            *Round
+	Grenades         map[string]*Grenade
+	Phase_countdowns *PhaseCountdown
+}
+
+type PlayerExtension struct {
+	SteamId  string
+	Name     string
+	Avatar   string
+	Country  string
+	RealName string
+	Extra    map[string]string
+}
+
+type TeamExtension struct {
+	Id       string
+	Logo     string
+	Country  string
+	Name     string
+	MapScore int
+	Extra    map[string]string
 }
 
 // provider
@@ -181,6 +210,7 @@ type Player struct {
 	SteamId       string
 	Clan          string
 	Name          string
+	DefaultName   string
 	Observer_slot int
 	Team          *Team
 	Activity      PlayerActivity
@@ -190,6 +220,9 @@ type Player struct {
 	Position      [3]float32
 	Forward       [3]float32
 	Avatar        string
+	Country       string
+	RealName      string
+	Extra         map[string]string
 }
 
 func (p *Player) IsAlive() bool {
@@ -214,6 +247,9 @@ type Team struct {
 	Flag                     string
 	Side                     Side
 	Orientation              Orientation
+	Id                       string
+	Country                  string
+	Extra                    map[string]string
 }
 
 // player_state
@@ -268,15 +304,18 @@ type Bomb struct {
 type PhaseCountdown struct {
 	Phase         PhaseType
 	Phase_ends_in float32
+	Timeout_team  *Team
 }
 
 type Grenade struct {
+	ID         string
 	Owner      string
 	Position   [3]float32
 	Velocity   [3]float32
 	Type       GrenadeType
 	Lifetime   float32
 	EffectTime float32
+	Flames     [][3]float32
 }
 
 type RoundPlayerDamage struct {
@@ -324,9 +363,9 @@ type HurtEvent struct {
 type Events string
 
 const (
-	Data     Events = "data"
-	RoundEnd Events = "roundEnd"
-	// RoundStart        Events = "roundStart"
+	Raw               Events = "raw"
+	Data              Events = "data"
+	RoundEnd          Events = "roundEnd"
 	Kill              Events = "kill"
 	Hurt              Events = "hurt"
 	TimeoutStart      Events = "timeoutStart"
@@ -343,7 +382,5 @@ const (
 	BombPlanted       Events = "bombPlanted"
 	BombDefused       Events = "bombDefused"
 	BombExploded      Events = "bombExploded"
-	// MapEnd            Events = "mapEnd"
-	// MapStart          Events = "mapStart"
-	MatchEnd Events = "matchEnd"
+	MatchEnd          Events = "matchEnd"
 )
